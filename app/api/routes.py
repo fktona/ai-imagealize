@@ -75,6 +75,13 @@ def _validate_rtsp_url(rtsp_url: str) -> None:
         raise HTTPException(status_code=400, detail="RTSP host not reachable")
 
 
+def _result_url(base_url: str, file_path: str) -> str:
+    abs_path = os.path.abspath(file_path)
+    results_root = os.path.abspath("results")
+    rel_path = os.path.relpath(abs_path, results_root).replace("\\", "/")
+    return f"{base_url}/results/{rel_path}"
+
+
 @router.post(
     "/analyze-image",
     response_model=ImageAnalysisResponse,
@@ -96,6 +103,7 @@ def _validate_rtsp_url(rtsp_url: str) -> None:
                             }
                         ],
                         "annotated_image_path": "results/images/2026-03-13_12-10-05/annotated_sample.jpg",
+                        "annotated_image_url": "http://localhost:8000/results/images/2026-03-13_12-10-05/annotated_sample.jpg",
                     }
                 }
             },
@@ -104,6 +112,7 @@ def _validate_rtsp_url(rtsp_url: str) -> None:
     },
 )
 async def analyze_image(
+    request: Request,
     file: UploadFile = File(..., description="Image file to analyze (jpg, png, webp, avif, bmp)."),
     detection_service: DetectionService = Depends(get_detection_service),
 ) -> ImageAnalysisResponse:
@@ -115,6 +124,9 @@ async def analyze_image(
 
     processor = ImageProcessor(detection_service)
     result = processor.analyze(image_path)
+    base_url = str(request.base_url).rstrip("/")
+    if result.get("annotated_image_path"):
+        result["annotated_image_url"] = _result_url(base_url, result["annotated_image_path"])
     return ImageAnalysisResponse(**result)
 
 
@@ -136,6 +148,7 @@ async def analyze_image(
                                 "confidence": 0.88,
                                 "bbox": [44.0, 99.0, 120.0, 188.0],
                                 "timestamp": "00:00:02.1",
+                                "frame_url": "http://localhost:8000/results/alerts/2026-03-13_12-12-40/alert_sample_120.jpg",
                             }
                         ],
                         "alert_frames_dir": "results/alerts/2026-03-13_12-12-40",
@@ -147,6 +160,7 @@ async def analyze_image(
     },
 )
 async def analyze_video(
+    request: Request,
     file: UploadFile = File(..., description="Video file to analyze (mp4, avi, mov, mkv)."),
     detection_service: DetectionService = Depends(get_detection_service),
 ) -> VideoAnalysisResponse:
@@ -158,6 +172,11 @@ async def analyze_video(
 
     processor = VideoProcessor(detection_service)
     result = processor.analyze(video_path)
+    base_url = str(request.base_url).rstrip("/")
+    for det in result.get("detections", []):
+        frame_path = det.pop("frame_path", None)
+        if frame_path:
+            det["frame_url"] = _result_url(base_url, frame_path)
     return VideoAnalysisResponse(**result)
 
 
@@ -279,6 +298,7 @@ async def screen_stream(
     },
 )
 async def start_stream(
+    request: Request,
     rtsp_url: str = Query(
         ...,
         description="RTSP URL for the drone feed.",
@@ -290,7 +310,6 @@ async def start_stream(
         example="drone-01",
     ),
     manager: StreamManager = Depends(get_stream_manager),
-    request: Request,
 ) -> dict[str, str]:
     _validate_rtsp_url(rtsp_url)
     if stream_id is None:

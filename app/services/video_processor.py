@@ -55,6 +55,7 @@ class VideoProcessor:
                             {
                                 **detection,
                                 "timestamp": timestamp,
+                                "frame_path": frame_path,
                             }
                         )
 

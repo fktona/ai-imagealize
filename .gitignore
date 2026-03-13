@@ -9,7 +9,7 @@ __pycache__/
 *.log
 
 # Model weights
-models/*.pt
+# models/*.pt
 
 # Uploads and results
 uploads/

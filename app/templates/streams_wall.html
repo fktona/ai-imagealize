@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Live Streams Wall</title>
+    <style>
+      :root { --bg:#0b0d10; --panel:#151a24; --text:#f3f4f6; --muted:#9aa3b2; }
+      * { box-sizing: border-box; }
+      body { margin:0; font-family: "Sora", sans-serif; background: var(--bg); color: var(--text); }
+      header { padding:16px 24px; border-bottom:1px solid rgba(148,163,184,0.15); }
+      h1 { margin:0; font-size:18px; letter-spacing:0.06em; text-transform:uppercase; }
+      .status { color: var(--muted); font-size:12px; }
+      .grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap:12px; padding:16px 24px 28px; }
+      .card { background: var(--panel); border-radius:12px; padding:10px; border:1px solid rgba(148,163,184,0.2); }
+      .title { font-size:12px; color: var(--muted); margin-bottom:6px; }
+      img { width:100%; border-radius:10px; background:#0f1115; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Live Streams Wall</h1>
+      <div class="status" id="status">Loading...</div>
+    </header>
+    <div class="grid" id="grid"></div>
+
+    <script>
+      async function loadStreams() {
+        const res = await fetch('/streams/status');
+        const data = await res.json();
+        const grid = document.getElementById('grid');
+        grid.innerHTML = '';
+        const streams = data.streams || [];
+
+        if (streams.length === 0) {
+          document.getElementById('status').textContent = 'No running streams';
+          return;
+        }
+
+        document.getElementById('status').textContent = `Showing ${streams.length} streams`; 
+        for (const s of streams) {
+          const card = document.createElement('div');
+          card.className = 'card';
+          const title = document.createElement('div');
+          title.className = 'title';
+          title.textContent = `${s.stream_id}`;
+          const img = document.createElement('img');
+          img.src = `/streams/${s.stream_id}/preview?ts=${Date.now()}`;
+          img.alt = s.stream_id;
+          card.appendChild(title);
+          card.appendChild(img);
+          grid.appendChild(card);
+        }
+      }
+
+      loadStreams();
+      setInterval(loadStreams, 5000);
+    </script>
+  </body>
+</html>

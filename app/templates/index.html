@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Weapon Detection Demo</title>
+    <style>
+      :root {
+        --bg: #0b0d10;
+        --bg-2: #141822;
+        --panel: #151a24;
+        --panel-2: #10141c;
+        --text: #f3f4f6;
+        --muted: #9aa3b2;
+        --accent: #f5a524;
+        --accent-2: #22d3ee;
+        --danger: #ef4444;
+        --glow: rgba(34, 211, 238, 0.18);
+      }
+
+      * { box-sizing: border-box; }
+      html, body { height: 100%; }
+      body {
+        margin: 0;
+        font-family: "Sora", "Segoe UI", sans-serif;
+        background: radial-gradient(1200px 600px at 10% 0%, #182033 0%, var(--bg) 45%, #08090b 100%);
+        color: var(--text);
+      }
+
+      .shell {
+        display: grid;
+        grid-template-rows: auto 1fr;
+        min-height: 100vh;
+      }
+
+      header {
+        padding: 28px 40px 18px;
+        border-bottom: 1px solid rgba(148, 163, 184, 0.15);
+        backdrop-filter: blur(10px);
+        background: linear-gradient(90deg, rgba(17, 24, 39, 0.7), rgba(12, 17, 24, 0.85));
+      }
+
+      h1 {
+        margin: 0 0 6px;
+        font-size: 28px;
+        letter-spacing: 0.04em;
+      }
+
+      .subtitle {
+        margin: 0;
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      .container {
+        padding: 28px 40px 48px;
+        display: grid;
+        gap: 24px;
+      }
+
+      .hero {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 16px;
+      }
+
+      .stat {
+        padding: 16px 18px;
+        border-radius: 16px;
+        background: linear-gradient(135deg, rgba(34, 211, 238, 0.15), rgba(245, 165, 36, 0.1));
+        border: 1px solid rgba(34, 211, 238, 0.25);
+        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
+      }
+
+      .stat h3 { margin: 0 0 6px; font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+      .stat p { margin: 0; font-size: 18px; font-weight: 600; }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 20px;
+      }
+
+      .card {
+        background: linear-gradient(180deg, rgba(21, 26, 36, 0.92), rgba(10, 13, 18, 0.92));
+        border: 1px solid rgba(148, 163, 184, 0.18);
+        border-radius: 18px;
+        padding: 20px;
+        box-shadow: 0 18px 45px rgba(0, 0, 0, 0.35);
+        position: relative;
+        overflow: hidden;
+        height: 520px;
+        overflow-y: auto;
+      }
+
+      .card::after {
+        content: "";
+        position: absolute;
+        inset: -40% 60% auto auto;
+        width: 180px;
+        height: 180px;
+        background: radial-gradient(circle, var(--glow), transparent 70%);
+        opacity: 0.7;
+        pointer-events: none;
+      }
+
+      .card h2 {
+        margin: 0 0 10px;
+        font-size: 18px;
+      }
+
+      .card p { margin: 0; color: var(--muted); font-size: 13px; }
+
+      label {
+        display: block;
+        margin-top: 12px;
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      input[type="file"] {
+        width: 100%;
+        margin-top: 6px;
+        background: var(--panel-2);
+        padding: 10px;
+        border-radius: 12px;
+        border: 1px solid rgba(148, 163, 184, 0.2);
+        color: var(--muted);
+      }
+
+      .button-row { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+      .button {
+        border: none;
+        padding: 10px 16px;
+        border-radius: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        background: linear-gradient(135deg, var(--accent), #f97316);
+        color: #1c1203;
+      }
+      .button.secondary {
+        background: linear-gradient(135deg, var(--accent-2), #0ea5e9);
+        color: #02141a;
+      }
+      .button.ghost {
+        background: rgba(148, 163, 184, 0.12);
+        color: var(--text);
+        border: 1px solid rgba(148, 163, 184, 0.25);
+      }
+      .button.warn {
+        background: linear-gradient(135deg, var(--danger), #b91c1c);
+        color: #210606;
+      }
+
+      .result {
+        background: rgba(15, 23, 42, 0.7);
+        border-radius: 12px;
+        padding: 12px;
+        margin-top: 12px;
+        font-size: 14px;
+        color: var(--muted);
+      }
+      .result strong { color: var(--text); }
+
+      img.preview {
+        margin-top: 12px;
+        max-width: 100%;
+        border-radius: 12px;
+        border: 1px solid rgba(148, 163, 184, 0.3);
+      }
+
+      .status { margin-top: 8px; color: var(--muted); font-size: 13px; }
+      .loading { opacity: 0.6; pointer-events: none; }
+      .loader {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--accent-2);
+        box-shadow: 12px 0 0 var(--accent-2), 24px 0 0 var(--accent-2);
+        animation: pulse 0.8s infinite ease-in-out;
+      }
+      @keyframes pulse {
+        0% { transform: translateX(0); opacity: 0.3; }
+        50% { transform: translateX(6px); opacity: 1; }
+        100% { transform: translateX(0); opacity: 0.3; }
+      }
+
+      .tabs { display: flex; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
+      .tab {
+        padding: 8px 14px;
+        border-radius: 999px;
+        background: rgba(148, 163, 184, 0.15);
+        cursor: pointer;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+      .tab.active {
+        background: linear-gradient(135deg, var(--accent-2), #0ea5e9);
+        color: #03131d;
+        font-weight: 700;
+      }
+
+      .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
+      .thumb {
+        width: 100%;
+        aspect-ratio: 4 / 3;
+        object-fit: cover;
+        border-radius: 12px;
+        border: 1px solid rgba(148, 163, 184, 0.3);
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+      }
+      .thumb:hover {
+        transform: translateY(-2px) scale(1.01);
+        box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
+      }
+      .run-group { margin-bottom: 18px; }
+      .run-title { font-size: 12px; color: var(--muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.06em; }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: rgba(245, 165, 36, 0.15);
+        color: #f8d9a0;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+      }
+
+      @media (max-width: 720px) {
+        header, .container { padding-left: 20px; padding-right: 20px; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <header>
+        <h1>Weapon Detection Demo</h1>
+        <!-- <p class="subtitle">YOLOv8-powered visual threat detection. Upload media or monitor your screen live.</p> -->
+      </header>
+
+      <div class="container">
+        <div class="hero">
+          <div class="stat">
+            <h3>Model</h3>
+            <p>Threat Detection v8</p>
+          </div>
+          <div class="stat">
+            <h3>Confidence Gate</h3>
+            <p>0.30+ for alerts</p>
+          </div>
+          <div class="stat">
+            <h3>Live Monitor</h3>
+            <p>Local Screen Capture</p>
+          </div>
+        </div>
+
+        <div class="grid">
+          <div class="card">
+            <div class="badge">Image Analysis</div>
+            <h2>Analyze Image</h2>
+            <p>Upload a still image for weapon detection.</p>
+            <form id="image-form" action="/ui/analyze-image" method="post" enctype="multipart/form-data">
+              <label for="image-file">Choose image</label>
+              <input id="image-file" type="file" name="file" accept="image/*" required />
+              <div class="button-row">
+                <button class="button" type="submit" id="image-submit">Analyze Image</button>
+              </div>
+              <div class="status" id="image-status"></div>
+            </form>
+            {% if image_result %}
+              <div class="result">
+                <strong>Weapon Detected:</strong> {{ image_result.weapon_detected }}<br />
+                <strong>Detections:</strong>
+                <ul>
+                  {% for det in image_result.detections %}
+                    <li>{{ det.object }} ({{ '%.2f'|format(det.confidence) }})</li>
+                  {% else %}
+                    <li>No detections</li>
+                  {% endfor %}
+                </ul>
+              </div>
+              {% if image_result.annotated_image_url %}
+                <img class="preview" src="{{ image_result.annotated_image_url }}" alt="Annotated" />
+              {% endif %}
+            {% endif %}
+          </div>
+
+          <div class="card">
+            <div class="badge">Video Analysis</div>
+            <h2>Analyze Video</h2>
+            <p>Process a video to detect weapons across frames.</p>
+            <form id="video-form" action="/ui/analyze-video" method="post" enctype="multipart/form-data">
+              <label for="video-file">Choose video</label>
+              <input id="video-file" type="file" name="file" accept="video/*" required />
+              <div class="button-row">
+                <button class="button secondary" type="submit" id="video-submit">Analyze Video</button>
+              </div>
+              <div class="status" id="video-status"></div>
+            </form>
+            {% if video_result %}
+              <div class="result">
+                <strong>Weapon Detected:</strong> {{ video_result.weapon_detected }}<br />
+                <strong>Detections:</strong>
+                <ul>
+                  {% for det in video_result.detections %}
+                    <li>{{ det.object }} ({{ '%.2f'|format(det.confidence) }}) @ {{ det.timestamp }}</li>
+                  {% else %}
+                    <li>No detections</li>
+                  {% endfor %}
+                </ul>
+              </div>
+              {% if video_result.alert_frame_urls %}
+                <div class="result">
+                  <strong>Alert Frames:</strong>
+                  <ul>
+                    {% for url in video_result.alert_frame_urls %}
+                      <li><a href="{{ url }}" target="_blank">{{ url }}</a></li>
+                    {% endfor %}
+                  </ul>
+                </div>
+              {% endif %}
+            {% endif %}
+          </div>
+
+          <div class="card">
+            <div class="badge">Live Monitor</div>
+            <h2>Screen Monitor</h2>
+            <p>Run a real-time monitor of your primary display.</p>
+            <div class="button-row">
+              <button class="button" onclick="startMonitor()">Start</button>
+              <button class="button warn" onclick="stopMonitor()">Stop</button>
+              <button class="button ghost" onclick="loadGallery()">Refresh Gallery</button>
+              <button class="button secondary" onclick="toggleScreenStream()">Toggle Screen Stream</button>
+            </div>
+            <div class="status" id="monitor-status">Status: idle</div>
+            <div class="result">
+              Starts the live screen monitor (local machine only). Press <strong>q</strong> in the preview window to stop.
+            </div>
+            <img class="preview" id="screen-stream" style="display:none" alt="Screen Stream" />
+          </div>
+
+          <div class="card">
+            <div class="badge">Camera Monitor</div>
+            <h2>Camera Stream</h2>
+            <p>Live annotated stream from webcam or RTSP (after starting monitor).</p>
+            <div class="button-row">
+              <button class="button secondary" onclick="toggleCameraStream()">Toggle Camera Stream</button>
+            </div>
+            <img class="preview" id="camera-stream" style="display:none" alt="Camera Stream" />
+          </div>
+
+          <div class="card">
+            <div class="badge">Results</div>
+            <h2>Results Gallery</h2>
+            <p>Browse alert frames by date. Click any thumbnail to open it.</p>
+            <div class="tabs">
+              <div class="tab active" data-kind="images" onclick="switchTab('images')">Images</div>
+              <div class="tab" data-kind="videos" onclick="switchTab('videos')">Videos</div>
+              <div class="tab" data-kind="screen" onclick="switchTab('screen')">Screen</div>
+            </div>
+            <div id="gallery"></div>
+            <div class="status" id="gallery-status">Last updated: --</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      let activeKind = 'images';
+      let refreshTimer = null;
+      const imageForm = document.getElementById('image-form');
+      const videoForm = document.getElementById('video-form');
+      const imageStatus = document.getElementById('image-status');
+      const videoStatus = document.getElementById('video-status');
+      const imageSubmit = document.getElementById('image-submit');
+      const videoSubmit = document.getElementById('video-submit');
+
+      async function startMonitor() {
+        const res = await fetch('/ui/start-screen-monitor', { method: 'POST' });
+        const data = await res.json();
+        document.getElementById('monitor-status').textContent = `Status: ${data.status}`;
+      }
+      async function stopMonitor() {
+        const res = await fetch('/ui/stop-screen-monitor', { method: 'POST' });
+        const data = await res.json();
+        document.getElementById('monitor-status').textContent = `Status: ${data.status}`;
+      }
+
+      function switchTab(kind) {
+        activeKind = kind;
+        document.querySelectorAll('.tab').forEach(tab => {
+          tab.classList.toggle('active', tab.dataset.kind === kind);
+        });
+        loadGallery();
+      }
+
+      function groupRunsByDate(runs) {
+        const groups = {};
+        for (const run of runs) {
+          const date = run.run_id.split('_')[0];
+          if (!groups[date]) groups[date] = [];
+          groups[date].push(run);
+        }
+        return groups;
+      }
+
+      async function loadGallery() {
+        document.getElementById('gallery-status').innerHTML = 'Refreshing <span class="loader"></span>';
+        const res = await fetch(`/ui/runs?kind=${activeKind}`);
+        const data = await res.json();
+        const groups = groupRunsByDate(data.runs || []);
+        const container = document.getElementById('gallery');
+        container.innerHTML = '';
+
+        const dates = Object.keys(groups).sort().reverse();
+        if (dates.length === 0) {
+          container.innerHTML = '<div class="result">No results yet.</div>';
+        } else {
+          for (const date of dates) {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'run-group';
+            wrapper.innerHTML = `<div class="run-title">${date}</div>`;
+            const gallery = document.createElement('div');
+            gallery.className = 'gallery';
+            for (const run of groups[date]) {
+              for (const file of run.files) {
+                const img = document.createElement('img');
+                img.className = 'thumb';
+                img.src = file;
+                img.loading = 'lazy';
+                img.onclick = () => window.open(file, '_blank');
+                gallery.appendChild(img);
+              }
+            }
+            wrapper.appendChild(gallery);
+            container.appendChild(wrapper);
+          }
+        }
+
+        document.getElementById('gallery-status').textContent =
+          `Last updated: ${new Date().toLocaleTimeString()}`;
+      }
+
+      function startRealtime() {
+        if (refreshTimer) clearInterval(refreshTimer);
+        refreshTimer = setInterval(loadGallery, 5000);
+      }
+
+      loadGallery();
+      startRealtime();
+
+      imageForm?.addEventListener('submit', () => {
+        imageForm.classList.add('loading');
+        imageSubmit.disabled = true;
+        imageStatus.innerHTML = 'Analyzing image <span class="loader"></span>';
+      });
+
+      videoForm?.addEventListener('submit', () => {
+        videoForm.classList.add('loading');
+        videoSubmit.disabled = true;
+        videoStatus.innerHTML = 'Analyzing video <span class="loader"></span>';
+      });
+
+      function toggleScreenStream() {
+        const img = document.getElementById('screen-stream');
+        if (img.style.display === 'none') {
+          img.src = `/screen/stream?ts=${Date.now()}`;
+          img.style.display = 'block';
+        } else {
+          img.src = '';
+          img.style.display = 'none';
+        }
+      }
+
+      function toggleCameraStream() {
+        const img = document.getElementById('camera-stream');
+        if (img.style.display === 'none') {
+          img.src = `/camera/stream?ts=${Date.now()}`;
+          img.style.display = 'block';
+        } else {
+          img.src = '';
+          img.style.display = 'none';
+        }
+      }
+    </script>
+  </body>
+</html>

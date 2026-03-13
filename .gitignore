@@ -1,0 +1,23 @@
+__pycache__/
+*.py[cod]
+*.so
+.venv/
+.env
+.DS_Store
+.idea/
+.vscode/
+*.log
+
+# Model weights
+models/*.pt
+
+# Uploads and results
+uploads/
+results/
+
+# YOLO/Ultralytics outputs
+runs/
+
+# Temporary files
+*.tmp
+*.temp

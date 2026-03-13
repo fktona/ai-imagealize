@@ -62,6 +62,7 @@ def _frame_stream(get_frame_fn):
 
 
 def _validate_rtsp_url(rtsp_url: str) -> None:
+    rtsp_url = rtsp_url.strip()
     parsed = urlparse(rtsp_url)
     if parsed.scheme not in {"rtsp", "rtsps"}:
         raise HTTPException(status_code=400, detail="Invalid RTSP URL scheme")
@@ -227,7 +228,7 @@ async def start_webcam_monitor(
 
 @router.post(
     "/start-rtsp-monitor",
-    include_in_schema=False,
+    # include_in_schema=False,
     summary="Start a single RTSP monitor",
     description="Starts a single RTSP/IP camera monitor. For multi-feed, use `/streams/start`.",
     responses={
@@ -249,6 +250,7 @@ async def start_rtsp_monitor(
     monitor: CameraMonitor = Depends(get_camera_monitor),
 ) -> dict[str, str]:
     """Start RTSP/IP camera monitoring on the server machine."""
+    url = url.strip()
     if validate:
         _validate_rtsp_url(url)
     started = monitor.start_rtsp(url, preview=preview)
@@ -322,6 +324,7 @@ async def start_stream(
     ),
     manager: StreamManager = Depends(get_stream_manager),
 ) -> dict[str, str]:
+    rtsp_url = rtsp_url.strip()
     if validate:
         _validate_rtsp_url(rtsp_url)
     if stream_id is None:

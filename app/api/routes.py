@@ -289,8 +289,8 @@ async def start_stream(
         description="Optional custom stream id. If omitted, an id is auto-generated.",
         example="drone-01",
     ),
-    request: Request,
     manager: StreamManager = Depends(get_stream_manager),
+    request: Request,
 ) -> dict[str, str]:
     _validate_rtsp_url(rtsp_url)
     if stream_id is None:

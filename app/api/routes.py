@@ -241,10 +241,16 @@ async def start_rtsp_monitor(
         description="If true, open a local preview window (server machine only).",
         example=False,
     ),
+    validate: bool = Query(
+        default=True,
+        description="If true, perform a quick reachability check on host:port before starting.",
+        example=True,
+    ),
     monitor: CameraMonitor = Depends(get_camera_monitor),
 ) -> dict[str, str]:
     """Start RTSP/IP camera monitoring on the server machine."""
-    _validate_rtsp_url(url)
+    if validate:
+        _validate_rtsp_url(url)
     started = monitor.start_rtsp(url, preview=preview)
     if not started:
         return {"status": "already_running"}
@@ -309,9 +315,15 @@ async def start_stream(
         description="Optional custom stream id. If omitted, an id is auto-generated.",
         example="drone-01",
     ),
+    validate: bool = Query(
+        default=True,
+        description="If true, perform a quick reachability check on host:port before starting.",
+        example=True,
+    ),
     manager: StreamManager = Depends(get_stream_manager),
 ) -> dict[str, str]:
-    _validate_rtsp_url(rtsp_url)
+    if validate:
+        _validate_rtsp_url(rtsp_url)
     if stream_id is None:
         stream_id = f"stream-{int(time.time())}"
     started = manager.start_stream(stream_id, rtsp_url)
